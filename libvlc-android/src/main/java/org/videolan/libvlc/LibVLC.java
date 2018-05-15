@@ -24,7 +24,6 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
-import org.videolan.libvlc.util.AndroidUtil;
 import org.videolan.libvlc.util.HWDecoderUtil;
 
 import java.util.ArrayList;
@@ -76,20 +75,6 @@ public class LibVLC extends VLCObject<LibVLC.Event> {
                 options.add("RV16");
             }
         }
-
-        /* XXX: HACK to remove when we drop 2.3 support: force android_display vout */
-        if (!AndroidUtil.isHoneycombOrLater) {
-            boolean setVout = true;
-            for (String option : options) {
-                if (option.startsWith("--vout")) {
-                    setVout = false;
-                    break;
-                }
-            }
-            if (setVout)
-                options.add("--vout=android_display,none");
-        }
-
         nativeNew(options.toArray(new String[options.size()]), context.getDir("vlc", Context.MODE_PRIVATE).getAbsolutePath());
     }
 
@@ -146,12 +131,11 @@ public class LibVLC extends VLCObject<LibVLC.Event> {
 
     private static boolean sLoaded = false;
 
-    static synchronized void loadLibraries() {
+    public static synchronized void loadLibraries() {
         if (sLoaded)
             return;
         sLoaded = true;
 
-        System.loadLibrary("c++_shared");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD_MR1
                 && Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             try {
@@ -188,8 +172,8 @@ public class LibVLC extends VLCObject<LibVLC.Event> {
         }
 
         try {
-            System.loadLibrary("vlc");
             System.loadLibrary("vlcjni");
+            System.loadLibrary("jniloader");
         } catch (UnsatisfiedLinkError ule) {
             Log.e(TAG, "Can't load vlcjni library: " + ule);
             /// FIXME Alert user
